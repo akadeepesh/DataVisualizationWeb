@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script type="text/javascript" src="smoothie.js"></script>
+<script>
+
+var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+navigator.mediaDevices.getUserMedia({ audio: true })
+  .then(stream => {
+    const source = audioCtx.createMediaStreamSource(stream);
+    const analyser = audioCtx.createAnalyser();
+    source.connect(analyser);
+    var audioData = new TimeSeries();
+
+    function draw() {
+      requestAnimationFrame(draw);
+      var bufferLength = analyser.frequencyBinCount;
+      var dataArray = new Uint8Array(bufferLength);
+      analyser.getByteFrequencyData(dataArray);
+
+      var average = 0;
+      for (var i = 0; i < bufferLength; i++) {
+        average += dataArray[i];
+      }
+      average = average / bufferLength;
+
+      audioData.append(Date.now(), average);
+      chart.addTimeSeries(audioData, { strokeStyle: 'rgba(0, 255, 0, 1)', fillStyle: 'rgba(0, 0, 0, 0.2)', lineWidth: 2 });
+    }
+
+    var chart = new SmoothieChart();
+    chart.streamTo(document.getElementById("chart"), 500);
+    draw();
+  });
+</script>
+</head>
+<body style="background-color:#333333">
+<canvas id="chart" width="500" height="100"></canvas>
+</body>
+</html>
